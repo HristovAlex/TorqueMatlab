@@ -2,22 +2,93 @@
 %Program for generating SmoothedData
 
 for trace = tendegreetraces
-    structname = strcat('Hella',num2str(trace));
-
-    lhs=strcat('[',structname,'.A_Fit, ',structname,'.A_gof]');
-    rhs=strcat('=createFit(',structname,'.Field, ',structname,'.A_X,',num2str(.9999),',0);');
-    
-    eval(strcat(lhs,rhs));
+    [Hella{trace}.A_Fit, Hella{trace}.A_gof]=createFit(Hella{trace}.Field,Hella{trace}.A_X,.999,0,num2str(trace));
 end
+
 %%
-%all traces at 10 degrees
-figure()
-hold on
+standardMesh=0.5:0.001:18;
 for trace = tendegreetraces
-    structname = strcat('Hella',num2str(trace));
-    x=strcat(structname,'.A_Fit');
-    y='deriv2';
-    eval(strcat('plot(',x,',"deriv2"')');
+    Hella{trace}.A_X_GRID = Hella{trace}.A_Fit(standardMesh);
+    [Hella{trace}.A_X_GRID_D,Hella{trace}.A_X_GRID_DD] = differentiate(Hella{trace}.A_Fit, standardMesh);
 end
 
+%%
+figure()
+for trace = tendegreetraces
+   if traceInfo.MaxField(trace-499)>10 && traceInfo.MinField(trace-499)<10
+       plot(standardMesh,Hella{trace}.A_X_GRID_DD + traceInfo.TraceTemp(trace-499)/200);
+       hold on
+   end
+end
+xlim([8,15])
 hold off
+clearvars trace ans
+
+
+%%
+%Program for generating SmoothedData
+
+for trace = fivedegreetraces
+    [Hella{trace}.A_Fit, Hella{trace}.A_gof]=createFit(Hella{trace}.Field,Hella{trace}.A_X,.9999,0,num2str(trace));
+end
+
+%%
+standardMesh=0.5:0.001:18;
+for trace = fivedegreetraces
+    Hella{trace}.A_X_GRID = Hella{trace}.A_Fit(standardMesh);
+    [Hella{trace}.A_X_GRID_D,Hella{trace}.A_X_GRID_DD] = differentiate(Hella{trace}.A_Fit, standardMesh);
+end
+
+%%
+figure()
+for trace = fivedegreetraces
+   if traceInfo.MaxField(trace-499)>10 && traceInfo.MinField(trace-499)<10
+       plot(standardMesh,Hella{trace}.A_X_GRID_DD + traceInfo.TraceTemp(trace-499)/200);
+       hold on
+   end
+end
+xlim([8,15])
+hold off
+clearvars trace ans
+
+
+
+
+%%
+%Program for generating SmoothedData
+
+for trace = tendegreetraces
+    [Hella{trace}.B_Fit, Hella{trace}.B_gof]=createFit(Hella{trace}.Field,Hella{trace}.B_X,.9999,0,num2str(trace));
+end
+
+%%
+standardMesh=0.5:0.001:18;
+for trace = tendegreetraces
+    Hella{trace}.B_X_GRID = Hella{trace}.B_Fit(standardMesh);
+    [Hella{trace}.B_X_GRID_D,Hella{trace}.B_X_GRID_DD] = differentiate(Hella{trace}.B_Fit, standardMesh);
+end
+
+%%
+figure()
+for trace = tendegreetraces
+   if traceInfo.MaxField(trace-499)>10 && traceInfo.MinField(trace-499)<10
+       plot(standardMesh,Hella{trace}.B_X_GRID_DD + traceInfo.TraceTemp(trace-499)/200);
+       hold on
+   end
+end
+xlim([8,15])
+hold off
+clearvars trace ans
+
+%%
+figure()
+for trace = tendegreetraces
+   if traceInfo.MaxField(trace-499)>10 && traceInfo.MinField(trace-499)<10
+       Hella{trace}.B_Residuals = Hella{trace}.B_X - Hella{trace}.B_Fit(Hella{trace}.Field);
+       plot(Hella{trace}.Field,Hella{trace}.B_Residuals+ traceInfo.TraceTemp(trace-499)/400000);
+       hold on
+   end
+end
+xlim([8,17])
+hold off
+clearvars trace ans

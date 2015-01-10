@@ -1,43 +1,47 @@
-
-
-%% 
-for trace = 500:609
-    filename = strcat('HellaJHP_.',num2str(trace));
-    structname = strcat('Hella',num2str(trace));
-    eval(strcat(structname,' = importTorqueFile(filename);'));
-end
-
 %% 
 Hella = cell(609);
 for trace = 500:609
     filename = strcat('HellaJHP_.',num2str(trace));
     Hella{trace}=importTorqueFile(filename);
 end
+
 %%
 %build trace database 
-%   FS_Angle: Angle at which the field sweep is taken, returns NaN if the
-%       sweep is not a field sweep
+%   traceLength: Number of points in the trace
+%   traceTime: last timestamp value
+%   FieldSweepAngle: Angle at which the field sweep is taken, returns NaN
+%       if the sweep is not a field sweep
 %   MaxField: Maximum field of the trace, rounded to .1T
 %   MinField: Minimum field of the trace, rounded to .1T
 %   MaxAngle: Maximum angle of the trace, rounded to .1deg
 %   MinAngle: Minimum angle of the sweep, rounded to .1deg
 %   IsTempSweep: 1 if field is 0 throughout, 0 else
-%   traceLength: Number of points in the trace
-%   traceTime: last timestamp value
+%   PrecedingTempSweep: Index value of the Previous temp trace
+%   NextTempSweep: Index value of the next temp trace
+%   EndMaxTemp: Max Temp amongst last 10 data points
+%   EndMinTemp: Min Temp Amongst last 10 data points
+%   StartMaxTemp: Max Temp amongst first 10 data points
+%   StartMinTemp: Min Temp Amongst first 10 data points
+%   EndField: Field Value at end of trace
+%   StartField: Field Value at start of trace
+%   TraceTemp: Average of the temps at the start of the next temp sweep and
+%       the end of the previous one
+%   TraceTempRange: Max deviation between temps at start of the next temp
+%       sweep and the end of the previous one.
+
+
 
 
 for trace = 500:609
     traceInfo.Index(trace-499)=trace;
     
-    structname = strcat('Hella',num2str(trace));
-    
-    traceInfo.FS_Angle(trace-499) = eval(strcat('angleOfFieldSweep(',structname,')'));
-    
-    traceInfo.MaxField(trace-499) = eval(strcat('round(max(',structname,'.Field),1)'));
-    traceInfo.MinField(trace-499) = eval(strcat('round(min(',structname,'.Field),1)'));
-    
-    traceInfo.MaxAngle(trace-499) = round(eval(strcat('max(',structname,'.Position)'))/360*4.925,1);
-    traceInfo.MinAngle(trace-499) = round(eval(strcat('min(',structname,'.Position)'))/360*4.925,1);
+    traceInfo.traceLength(trace-499)= length(Hella{trace}.Field);
+    traceInfo.traceTime(trace-499)  = Hella{trace}.Timestamp(traceInfo.traceLength(trace-499));
+
+    traceInfo.FieldSweepAngle(trace-499)= angleOfFieldSweep(Hella{trace});
+
+    traceInfo.MaxField(trace-499) = round(max(Hella{trace}.Field),1);
+    traceInfo.MinField(trace-499) = round(min(Hella{trace}.Field),1);
     
     if traceInfo.MaxField(trace-499)==0
         traceInfo.IsTempSweep(trace-499) = 1;
@@ -49,10 +53,7 @@ for trace = 500:609
         traceInfo.PrecedingTempSweep(trace-499) = traceInfo.PrecedingTempSweep(trace-500) ;
     end
     
-    traceInfo.traceLength(trace-499)= eval(strcat('length(',structname,'.Field)'));
-    traceInfo.traceTime(trace-499)= eval(strcat(structname,'.Timestamp(', num2str(traceInfo.traceLength(trace-499)) ,')'));
-
-    temps = eval(strcat(structname,'.Temp'));
+    temps = Hella{trace}.Temp;
     endtemps = temps(traceInfo.traceLength(trace-499)-10:traceInfo.traceLength(trace-499));
     
     traceInfo.EndMaxTemp(trace-499) = max(endtemps);
@@ -60,16 +61,9 @@ for trace = 500:609
     traceInfo.StartMaxTemp(trace-499) = max(temps(1:10));
     traceInfo.StartMinTemp(trace-499) = min(temps(1:10));
     
-    field = eval(strcat(structname,'.Field'));
-    endfield = field(traceInfo.traceLength(trace-499));
-    
-    traceInfo.EndField(trace-499) =  round(endfield,1);
-    traceInfo.StartField(trace-499) = round(field(1),1);
-
+    traceInfo.EndField(trace-499) =  round(Hella{trace}.Field(traceInfo.traceLength(trace-499)),1);
+    traceInfo.StartField(trace-499) = round(Hella{trace}.Field(1),1);
 end
-
-
-
 
 for trace = 609:-1:500
     structname = strcat('Hella',num2str(trace));
@@ -101,12 +95,16 @@ for trace = 500:609
 
 end
 
+clearvars temps structname trace endtemps afterIndex beforeIndex
+%%
+
+
+
 %%
 %identify trace subsets
-tracenumbers = 500:609;
-fivedegreetraces = tracenumbers(abs(traceInfo.FS_Angle-4.925) < 1e-4);
-tendegreetraces = tracenumbers(abs(traceInfo.FS_Angle-9.85) < 1e-4);
-tempsweeptraces = tracenumbers(traceInfo.IsTempSweep==1);
+fivedegreetraces = traceInfo.Index(abs(traceInfo.FieldSweepAngle-4.925) < 1e-4);
+tendegreetraces = traceInfo.Index(abs(traceInfo.FieldSweepAngle-9.85) < 1e-4);
+tempsweeptraces = traceInfo.Index(traceInfo.IsTempSweep==1);
 
 
 
@@ -125,12 +123,8 @@ tempsweeptraces = tracenumbers(traceInfo.IsTempSweep==1);
 figure()
 hold on
 for trace = fivedegreetraces
-    structname = strcat('Hella',num2str(trace));
-    x=strcat(structname,'.Field');
-    y=strcat(structname,'.A0_X');
-    eval(strcat('plot(',x,',',y,')'));
+    plot(Hella{trace}.Field,Hella{trace}.A_X)
 end
-
 hold off
 
 %%
@@ -138,10 +132,7 @@ hold off
 figure()
 hold on
 for trace = tendegreetraces
-    structname = strcat('Hella',num2str(trace));
-    x=strcat(structname,'.Field');
-    y=strcat(structname,'.A0_X');
-    eval(strcat('plot(',x,',',y,')'));
+    plot(Hella{trace}.Field,Hella{trace}.A_X)
 end
 
 hold off
@@ -152,11 +143,7 @@ figure()
 hold on
 timestampOffset = 0;
 for trace = tempsweeptraces
-    structname = strcat('Hella',num2str(trace));
-    
-    x=strcat(structname,'.Timestamp+timestampOffset');
-    y=strcat(structname,'.Temp');
-    eval(strcat('plot(',x,',',y,')'));
+    plot(Hella{trace}.Timestamp+timestampOffset,Hella{trace}.Temp);
     timestampOffset = timestampOffset + traceInfo.traceTime(trace-499);
 end
  
@@ -183,12 +170,13 @@ hold off
 figure()
 hold on
 timestampOffset = 0;
-for trace = tracenumbers
-    structname = strcat('Hella',num2str(trace));
-    x=strcat(structname,'.Timestamp+timestampOffset');
-    y=strcat(structname,'.Temp');
-    eval(strcat('plot(',x,',',y,')'));
+for trace = traceInfo.Index
+    plot(Hella{trace}.Timestamp+timestampOffset,Hella{trace}.Temp); 
+    
     timestampOffset = timestampOffset + traceInfo.traceTime(trace-499);
 end
  
 hold off
+
+%%
+clearvars x y trace ans structname timestampOffset
