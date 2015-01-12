@@ -1,42 +1,36 @@
-%%convolution
 
-raw=Hella{537}.C_X;
-field=Hella{537}.Field;
 
-sigma = 4;
-filtergrid=-(10*sigma):(10*sigma);
 
 %%
+for trace = tendegreetraces
+    [Hella{trace}.A_Conv, Hella{trace}.A_ConvD, Hella{trace}.A_ConvD2]=...
+        gConvolve(Hella{trace}.A_X,8);
+end
 
-filter = 1/sqrt(2*pi*sigma^2) * exp(- filtergrid.^2/(2*sigma^2));
-
-plot(filtergrid,filter);
-
-smoothed=conv(raw,filter,'same');
-
-% figure
-% plot(field,smoothed);
-
-
-figure
-hold on
-plot(field,smoothed-raw);
-xlim([2,16])
-
-
-filter = 1/sqrt(2*pi*sigma^2) * exp(- filtergrid.^2/(2*sigma^2));
-smoothedRes=conv(smoothed-raw,filter,'same');
-plot(field,smoothedRes);
-xlim([2,16])
+figure()
+for trace = tendegreetraces
+   if traceInfo.MaxField(trace-499)>10 && traceInfo.MinField(trace-499)<10
+       plot(Hella{trace}.Field, Hella{trace}.A_ConvD2 + traceInfo.TraceTemp(trace-499)/20000000);
+       hold on
+   end
+end
+xlim([8,15])
 hold off
+clearvars trace ans
 
 %%
+for trace = fivedegreetraces
+    [Hella{trace}.A_Conv, Hella{trace}.A_ConvD, Hella{trace}.A_ConvD2]=...
+        gConvolve(Hella{trace}.A_X,8);
+end
 
-D2filter = 1/sqrt(2*pi*sigma^10)*(filtergrid.^2-sigma^2).* exp(- filtergrid.^2/(2*sigma^2));
-figure
-plot(filtergrid,D2filter)
-figure
-smoothedD2=conv(raw,D2filter,'same');
-plot(field,smoothedD2);
-xlim([2,16])
+figure()
+for trace = fivedegreetraces
+   if traceInfo.MaxField(trace-499)>10 && traceInfo.MinField(trace-499)<10
+       plot(Hella{trace}.Field, Hella{trace}.A_ConvD2 + traceInfo.TraceTemp(trace-499)/20000000);
+       hold on
+   end
+end
+xlim([8,15])
 hold off
+clearvars trace ans
