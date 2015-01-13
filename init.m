@@ -5,5 +5,3 @@ load('HellaAndInfo.mat')
 
 
 
-
-

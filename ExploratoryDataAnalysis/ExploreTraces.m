@@ -6,8 +6,8 @@
 %all traces at 5 degrees
 figure()
 hold on
-for trace = fivedegreetraces
-    plot(Hella{trace}.Field,Hella{trace}.A_X)
+for trace = traceInfo.fivedegreetraces
+    plot(Hella(trace).Field,Hella(trace).A_X)
 end
 hold off
 
@@ -15,8 +15,8 @@ hold off
 %all traces at 10 degrees
 figure()
 hold on
-for trace = tendegreetraces
-    plot(Hella{trace}.Field,Hella{trace}.A_X)
+for trace = traceInfo.tendegreetraces
+    plot(Hella(trace).Field,Hella(trace).A_X)
 end
 
 hold off
@@ -26,19 +26,19 @@ hold off
 figure()
 hold on
 timestampOffset = 0;
-for trace = tempsweeptraces
-    plot(Hella{trace}.Timestamp+timestampOffset,Hella{trace}.Temp);
+for trace = traceInfo.tempsweeptraces
+    plot(Hella(trace).Timestamp+timestampOffset,Hella(trace).Temp);
     timestampOffset = timestampOffset + traceInfo.traceTime(trace-499);
 end
  
 hold off
-
+clearvars timestampOffset trace
 
 %%
 %plot temperature values at the beginning and end of traces
 figure()
 hold on
-plot(tracenumbers,traceInfo.EndMaxTemp,tracenumbers,traceInfo.EndMinTemp,tracenumbers,traceInfo.StartMaxTemp,tracenumbers,traceInfo.StartMinTemp)
+plot(traceInfo.Index,traceInfo.EndMaxTemp,traceInfo.Index,traceInfo.EndMinTemp,traceInfo.Index,traceInfo.StartMaxTemp,traceInfo.Index,traceInfo.StartMinTemp)
 hold off
 
 
@@ -46,7 +46,7 @@ hold off
 %plot Field values at the beginning and end of traces
 figure()
 hold on
-plot(tracenumbers,traceInfo.StartField,tracenumbers,traceInfo.EndField)
+plot(traceInfo.Index,traceInfo.StartField,traceInfo.Index,traceInfo.EndField)
 hold off
 
 %%
@@ -55,12 +55,12 @@ figure()
 hold on
 timestampOffset = 0;
 for trace = traceInfo.Index
-    plot(Hella{trace}.Timestamp+timestampOffset,Hella{trace}.Temp); 
+    plot(Hella(trace).Timestamp+timestampOffset,Hella(trace).Temp); 
     
     timestampOffset = timestampOffset + traceInfo.traceTime(trace-499);
 end
  
 hold off
-
+clearvars trace timestampOffset
 %%
 clearvars x y trace ans structname timestampOffset
