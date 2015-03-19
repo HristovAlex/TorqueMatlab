@@ -1,38 +1,63 @@
-load quakedrift.mat
 %%
-Fs  = 4;                 % sample rate
-dt = 1/Fs;                  % time differential
-%t = (0:length(TestY)-1)*dt; % time vector
+Fs  = 1000;                 % sample rate
 
-df = designfilt('differentiatorfir','FilterOrder',150,...
-                'PassbandFrequency',0.05,'StopbandFrequency',0.2,...
+FA = designfilt('differentiatorfir','FilterOrder',100,...
+                'PassbandFrequency',0.48,'StopbandFrequency',5,...
                 'SampleRate',Fs);
             
-hfvt = fvtool(df,[1 -1],1,'magnitudedisplay','zero-phase','Fs',Fs);
-legend(hfvt,'50th order FIR differentiator','Response of diff function');
+FB = designfilt('differentiatorfir','FilterOrder',100,...
+                'PassbandFrequency',0.48,'StopbandFrequency',5,...
+                'SampleRate',Fs);
+
+FC = designfilt('differentiatorfir','FilterOrder',1400,...
+                'PassbandFrequency',5,'StopbandFrequency',12,...
+                'SampleRate',Fs);
+            
+FD = designfilt('differentiatorfir','FilterOrder',100,...
+                'PassbandFrequency',0.48,'StopbandFrequency',3,...
+                'SampleRate',Fs);
+            
+hfvt = fvtool(FC,[1 -1],1,'magnitudedisplay','zero-phase','Fs',Fs);
+legend(hfvt,'FIR filter','Response of diff function');
 %%
-v1 = diff(TestY)/dt;
-a1 = diff(v1)/dt;
 
-v1 = [0; v1];
-a1 = [0; 0; a1];
+for trace = traceInfo.reducedtendegreetraces
+    HellaInterp10(trace).A_FilteredD2=filtfilt(FA,HellaInterp10(trace).A_X_Interp);
+    HellaInterp10(trace).B_FilteredD2=filtfilt(FB,HellaInterp10(trace).B_X_Interp);
+    HellaInterp10(trace).C_FilteredD2=filtfilt(FC,HellaInterp10(trace).C_X_Interp);
+    HellaInterp10(trace).D_FilteredD2=filtfilt(FD,HellaInterp10(trace).D_X_Interp);
+end
 
-D = mean(grpdelay(df)); % filter delay
-v2 = filter(df,[TestY; zeros(D,1)]);
-v2 = v2(D+1:end);
-a2 = filter(df,[v2; zeros(D,1)]);
-a2 = a2(D+1:end);
-v2 = v2/dt;
-a2 = a2/dt^2;
+figure('name', 'Second Derivative obtained by convolution on the grid 10 Degrees')
+for trace = traceInfo.reducedtendegreetraces
+    subplot(2,2,1)
+    plot(HellaInterp10(trace).Field, HellaInterp10(trace).A_FilteredD2+HellaInterp10(trace).Temp/2e8)
+    xlim([5,14]);ylim([0,1e-9]);
+    
+    hold on
+    subplot(2,2,2)
+    plot(HellaInterp10(trace).Field, -HellaInterp10(trace).B_FilteredD2+HellaInterp10(trace).Temp/2e8)
+    xlim([5,14]);ylim([0,1e-9]);
+    hold on
+    subplot(2,2,3)
+    plot(HellaInterp10(trace).Field, -HellaInterp10(trace).C_FilteredD2+HellaInterp10(trace).Temp/5e8)
+    xlim([5,14]);ylim([0,1e-9]);
+    hold on
+    subplot(2,2,4)
+    plot(HellaInterp10(trace).Field, HellaInterp10(trace).D_FilteredD2+HellaInterp10(trace).Temp/1e9)
+    xlim([5,15]);ylim([0,0.7e-9]);
+    hold on
+end
 
-TestLength=length(TestY);
-plot(TestX,a1,TestX,a2)
-plot(TestX(100:(length(TestY)-100)),a2(100:(length(TestY)-100)))
+clearvars trace ans Fs
 
-%helperFilterIntroductionPlot2(t,drift,v1,v2,a1,a2);
+
+
+
+
 
 %%
-findpeaks(a2(100:(length(TestY)-100)),TestX(100:(length(TestY)-100)),'MinPeakProminence',.4e-8);
-xlabel('Field');
-ylabel('D2Torque')
-title('Find Prominent Peaks');  
+% findpeaks(a2(100:(length(TestY)-100)),TestX(100:(length(TestY)-100)),'MinPeakProminence',.4e-8);
+% xlabel('Field');
+% ylabel('D2Torque')
+% title('Find Prominent Peaks');  
